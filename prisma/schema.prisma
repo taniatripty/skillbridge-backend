@@ -1,0 +1,212 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// =======================
+/// Tutor Profile
+/// =======================
+
+model TutorProfile {
+  id     String @id @default(uuid())
+  userId String @unique // references User.id (Better Auth)
+
+  hourlyRate Float
+  experience Int?
+  education  String?
+  languages  String[]
+  isVerified Boolean  @default(false)
+
+  totalReviews Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relations
+  categories   TutorCategory[]
+  availability AvailabilitySlot[]
+  bookings     Booking[]
+  reviews      Review[]
+}
+
+/// =======================
+/// Category
+/// =======================
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  tutors TutorCategory[]
+}
+
+/// =======================
+/// Tutor ↔ Category (Many-to-Many)
+/// =======================
+
+model TutorCategory {
+  tutorProfileId String
+  categoryId     String
+
+  tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id])
+  category     Category     @relation(fields: [categoryId], references: [id])
+
+  @@id([tutorProfileId, categoryId])
+}
+
+/// =======================
+/// Availability Slot
+/// =======================
+
+model AvailabilitySlot {
+  id             String @id @default(uuid())
+  tutorProfileId String
+
+  dayOfWeek DayOfWeek
+  startTime String // "09:00"
+  endTime   String // "10:00"
+  isBooked  Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+
+  // relations
+  tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id])
+}
+
+/// =======================
+/// Booking
+/// =======================
+
+model Booking {
+  id String @id @default(uuid())
+
+  studentId          String // references User.id
+  tutorProfileId     String
+  availabilitySlotId String
+
+  status      BookingStatus @default(CONFIRMED)
+  cancelledBy CancelledBy?
+  price       Float
+
+  createdAt DateTime @default(now())
+
+  // relations
+  tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id])
+  review       Review?
+}
+
+/// =======================
+/// Review
+/// =======================
+
+model Review {
+  id String @id @default(uuid())
+
+  bookingId      String @unique
+  studentId      String // references User.id
+  tutorProfileId String
+
+  rating  Int
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  // relations
+  booking      Booking      @relation(fields: [bookingId], references: [id])
+  tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id])
+}
+
+enum BookingStatus {
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum CancelledBy {
+  STUDENT
+  TUTOR
+}
+
+enum DayOfWeek {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
