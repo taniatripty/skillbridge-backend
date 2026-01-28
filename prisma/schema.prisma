@@ -13,14 +13,9 @@ datasource db {
   provider = "postgresql"
 }
 
-/// =======================
-/// Tutor Profile
-/// =======================
-
 model TutorProfile {
-  id     String @id @default(uuid())
-  userId String @unique // references User.id (Better Auth)
-
+  id         String   @id @default(uuid())
+  userId     String   @unique
   hourlyRate Float
   experience Int?
   education  String?
@@ -32,16 +27,11 @@ model TutorProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // relations
   categories   TutorCategory[]
   availability AvailabilitySlot[]
   bookings     Booking[]
   reviews      Review[]
 }
-
-/// =======================
-/// Category
-/// =======================
 
 model Category {
   id        String   @id @default(uuid())
@@ -50,10 +40,6 @@ model Category {
 
   tutors TutorCategory[]
 }
-
-/// =======================
-/// Tutor ↔ Category (Many-to-Many)
-/// =======================
 
 model TutorCategory {
   tutorProfileId String
@@ -65,17 +51,13 @@ model TutorCategory {
   @@id([tutorProfileId, categoryId])
 }
 
-/// =======================
-/// Availability Slot
-/// =======================
-
 model AvailabilitySlot {
   id             String @id @default(uuid())
   tutorProfileId String
 
   dayOfWeek DayOfWeek
-  startTime String // "09:00"
-  endTime   String // "10:00"
+  startTime String
+  endTime   String
   isBooked  Boolean   @default(false)
 
   createdAt DateTime @default(now())
@@ -83,10 +65,6 @@ model AvailabilitySlot {
   // relations
   tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id])
 }
-
-/// =======================
-/// Booking
-/// =======================
 
 model Booking {
   id String @id @default(uuid())
@@ -105,10 +83,6 @@ model Booking {
   tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id])
   review       Review?
 }
-
-/// =======================
-/// Review
-/// =======================
 
 model Review {
   id String @id @default(uuid())
@@ -158,6 +132,10 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+
+  role   String  @default("STUDENT")
+  phone  String?
+  status String? @default("ACTIVE")
 
   @@unique([email])
   @@map("user")
