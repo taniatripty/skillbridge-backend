@@ -2,8 +2,9 @@ import { NextFunction, Request, Response } from "express";
 import { auth } from "../lib/auth";
 
 export enum UserRoles {
-     USER = "USER",
-    ADMIN = "ADMIN"
+     STUDENT = "STUDENT",
+    ADMIN = "ADMIN",
+    TUTOR="TUTOR"
 }
 declare global{
     namespace Express{
