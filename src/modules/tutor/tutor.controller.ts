@@ -56,7 +56,24 @@ const updateAvailability = async (req: Request, res: Response) => {
   }
 };
 
+
+const getAllTutors = async (req: Request, res: Response) => {
+  try {
+    const tutors = await tutorServices.getAllTutors();
+
+    res.status(200).json({
+      success: true,
+      data: tutors,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 export const tutorController = {
   createTutorProfile,
-  updateAvailability
+  updateAvailability,
+  getAllTutors
 };

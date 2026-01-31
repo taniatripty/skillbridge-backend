@@ -91,7 +91,29 @@ const updateAvailability = async (
   };
 };
 
+const getAllTutors = async () => {
+  const tutors = await prisma.tutorProfile.findMany({
+    include: {
+      availability: {
+        select: {
+          id: true,
+          dayOfWeek: true,
+          startTime: true,
+          endTime: true,
+          isBooked: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return tutors;
+};
+
 export const tutorServices = {
   createTutor,
   updateAvailability,
+  getAllTutors
 };

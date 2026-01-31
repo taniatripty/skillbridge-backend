@@ -16,4 +16,6 @@ router.put(
 tutorController.updateAvailability
 );
 
+router.get("/", tutorController.getAllTutors);
+
 export const tutotRoutes=router;
