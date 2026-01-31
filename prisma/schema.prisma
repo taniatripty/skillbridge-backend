@@ -14,24 +14,29 @@ datasource db {
 }
 
 model TutorProfile {
-  id         String   @id @default(uuid())
-  userId     String   @unique
-  hourlyRate Float
-  experience Int?
-  education  String?
-  languages  String[]
-  isVerified Boolean  @default(false)
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  hourlyRate  Float
+  experience  Int?
+  education   String?
+  languages   String[]
+  isVerified  Boolean  @default(false)
+  totalReviews Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  totalReviews Int @default(0)
+ 
+  name        String?
+  email       String?
+  image       String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  // Relations
   categories   TutorCategory[]
   availability AvailabilitySlot[]
   bookings     Booking[]
   reviews      Review[]
 }
+
 
 model Category {
   id        String   @id @default(uuid())
