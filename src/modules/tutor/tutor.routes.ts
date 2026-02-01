@@ -16,6 +16,7 @@ router.put(
 tutorController.updateAvailability
 );
 
+router.get("/:tutorId", tutorController.getTutorById);
 router.get("/", tutorController.getAllTutors);
 
 export const tutotRoutes=router;

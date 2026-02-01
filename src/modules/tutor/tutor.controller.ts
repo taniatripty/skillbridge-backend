@@ -72,8 +72,27 @@ const getAllTutors = async (req: Request, res: Response) => {
     });
   }
 };
+
+const getTutorById = async (req: Request, res: Response) => {
+  try {
+    const { tutorId } = req.params;
+
+    const tutor = await tutorServices.getTutorProfileById(tutorId as string);
+
+    res.status(200).json({
+      success: true,
+      data: tutor,
+    });
+  } catch (error: any) {
+    res.status(404).json({
+      success: false,
+      message: error.message || "Tutor not found",
+    });
+  }
+};
 export const tutorController = {
   createTutorProfile,
   updateAvailability,
-  getAllTutors
+  getAllTutors,
+  getTutorById
 };
