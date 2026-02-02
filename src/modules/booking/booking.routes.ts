@@ -18,4 +18,10 @@ router.get(
 );
 router.get("/:id", authmiddleware(UserRoles.STUDENT,UserRoles.TUTOR),bookingController.getBookingById);
 
+router.delete(
+  "/:id",
+authmiddleware(UserRoles.STUDENT,UserRoles.TUTOR),
+  bookingController.cancelBooking
+);
+
 export const bookingRoutes = router;

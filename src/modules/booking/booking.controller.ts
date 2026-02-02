@@ -92,8 +92,33 @@ const getBookingById = async (req: Request, res: Response) => {
   }
 };
 
+
+const cancelBooking = async (req: Request, res: Response) => {
+  try {
+    const bookingId = req.params.id;
+    const studentId = req.user?.id; // from auth middleware
+
+    const result = await bookingServices.cancelBooking(
+      bookingId as string,
+      studentId as string
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Booking cancelled successfully",
+      data: result,
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const bookingController = {
   createBooking,
   getMyBookings,
-  getBookingById
+  getBookingById,
+  cancelBooking
 };

@@ -116,8 +116,39 @@ const getBookingsByStudent = async (studentId: string) => {
   return booking;
 };
 
+
+const cancelBooking = async (bookingId: string, studentId: string) => {
+  // 1️⃣ Find booking
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+  });
+
+  if (!booking) {
+    throw new Error("Booking not found");
+  }
+
+  // 2️⃣ Ownership check
+  if (booking.studentId !== studentId) {
+    throw new Error("You are not allowed to cancel this booking");
+  }
+
+  // 3️⃣ Free availability slot
+  await prisma.availabilitySlot.update({
+    where: { id: booking.availabilitySlotId },
+    data: { isBooked: false },
+  });
+
+  // 4️⃣ Delete booking
+  await prisma.booking.delete({
+    where: { id: bookingId },
+  });
+
+  return { id: bookingId };
+};
+
 export const bookingServices = {
   createBooking,
   getBookingsByStudent,
-  getBookingByIdForStudent
+  getBookingByIdForStudent,
+  cancelBooking
 };
