@@ -16,5 +16,6 @@ router.get(
  authmiddleware(UserRoles.STUDENT),
   bookingController.getMyBookings
 );
+router.get("/:id", authmiddleware(UserRoles.STUDENT,UserRoles.TUTOR),bookingController.getBookingById);
 
 export const bookingRoutes = router;

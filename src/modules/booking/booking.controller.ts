@@ -50,7 +50,50 @@ const getMyBookings = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+
+// src/modules/booking/booking.controller.ts
+
+
+const getBookingById = async (req: Request, res: Response) => {
+  try {
+    const bookingId = req.params.id;
+    const studentId = req?.user?.id; 
+
+    if (!bookingId) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking ID is required",
+      });
+    }
+
+    const booking = await bookingServices.getBookingByIdForStudent(
+      bookingId as string,
+      studentId as string
+    );
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: booking,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Something went wrong",
+    });
+  }
+};
+
 export const bookingController = {
   createBooking,
-  getMyBookings
+  getMyBookings,
+  getBookingById
 };
