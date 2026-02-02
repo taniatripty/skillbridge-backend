@@ -50,6 +50,40 @@ const createBooking = async (
   return booking;
 };
 
+
+const getBookingsByStudent = async (studentId: string) => {
+  const bookings = await prisma.booking.findMany({
+    where: {
+      studentId,
+    },
+    include: {
+      tutorProfile: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          hourlyRate: true,
+          languages: true,
+        },
+      },
+      // include slot info
+      availabilitySlot: {
+        select: {
+          dayOfWeek: true,
+          startTime: true,
+          endTime: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return bookings;
+};
+
 export const bookingServices = {
   createBooking,
+  getBookingsByStudent
 };

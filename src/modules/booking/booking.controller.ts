@@ -33,6 +33,24 @@ const createBooking = async (req: Request, res: Response) => {
   }
 };
 
+const getMyBookings = async (req: Request, res: Response) => {
+  try {
+    const studentId = req?.user?.id; // from auth middleware
+
+    const bookings = await bookingServices.getBookingsByStudent(studentId as string);
+
+    res.status(200).json({
+      success: true,
+      data: bookings,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 export const bookingController = {
   createBooking,
+  getMyBookings
 };

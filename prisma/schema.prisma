@@ -68,6 +68,7 @@ model AvailabilitySlot {
   createdAt DateTime @default(now())
 
   // relations
+  bookings Booking[]
   tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id])
 }
 
@@ -85,6 +86,8 @@ model Booking {
   createdAt DateTime @default(now())
 
   // relations
+  availabilitySlot AvailabilitySlot @relation(fields: [availabilitySlotId], references: [id])
+
   tutorProfile TutorProfile @relation(fields: [tutorProfileId], references: [id])
   review       Review?
 }
