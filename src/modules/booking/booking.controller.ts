@@ -51,6 +51,32 @@ const getMyBookings = async (req: Request, res: Response) => {
   }
 };
 
+const getTutorBookings = async (req: Request, res: Response) => {
+  try {
+    const tutorProfileId = req.user?.tutorProfileId;
+
+    if (!tutorProfileId) {
+      return res.status(403).json({
+        success: false,
+        message: "Tutor profile not found",
+      });
+    }
+
+    const bookings = await bookingServices.getBookingsByTutor(
+      tutorProfileId
+    );
+
+    res.status(200).json({
+      success: true,
+      data: bookings,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 
 // src/modules/booking/booking.controller.ts
@@ -116,9 +142,33 @@ const cancelBooking = async (req: Request, res: Response) => {
   }
 };
 
+ const updateBookingStatus = async (req: Request, res: Response) => {
+  try {
+    const bookingId = req.params.id;
+    const { status } = req.body;
+    const tutorProfileId = req.user?.tutorProfileId;
+
+    if (!["CANCELLED", "COMPLETED"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
+    }
+
+    const updatedBooking = await bookingServices.updateBookingStatus(
+      bookingId as string,
+      tutorProfileId as string,
+      status
+    );
+
+    res.status(200).json({ success: true, data: updatedBooking });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const bookingController = {
   createBooking,
   getMyBookings,
   getBookingById,
-  cancelBooking
+  cancelBooking,
+ getTutorBookings,
+ updateBookingStatus
 };

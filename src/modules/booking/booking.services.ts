@@ -117,6 +117,56 @@ const getBookingsByStudent = async (studentId: string) => {
 };
 
 
+
+
+const getBookingsByTutor = async (tutorProfileId: string) => {
+  return await prisma.booking.findMany({
+    where: {
+      tutorProfileId,
+    },
+    include: {
+      
+      availabilitySlot: {
+        select: {
+          dayOfWeek: true,
+          startTime: true,
+          endTime: true,
+        },
+      },
+      tutorProfile:{
+        select:{
+          name:true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
+
+
+  const updateBookingStatus= async (bookingId: string, tutorProfileId: string, status: "CANCELLED" | "COMPLETED") => {
+    // Check if the booking exists and belongs to this tutor
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    if (booking.tutorProfileId !== tutorProfileId) {
+      throw new Error("You can only update your own bookings");
+    }
+
+    // Update status
+    return await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status },
+    });
+  }
+
 const cancelBooking = async (bookingId: string, studentId: string) => {
   // 1️⃣ Find booking
   const booking = await prisma.booking.findUnique({
@@ -150,5 +200,7 @@ export const bookingServices = {
   createBooking,
   getBookingsByStudent,
   getBookingByIdForStudent,
-  cancelBooking
+  getBookingsByTutor,
+  cancelBooking,
+  updateBookingStatus
 };

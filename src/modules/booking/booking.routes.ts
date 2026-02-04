@@ -16,6 +16,9 @@ router.get(
  authmiddleware(UserRoles.STUDENT),
   bookingController.getMyBookings
 );
+
+router.get("/tutorbooking", authmiddleware(UserRoles.TUTOR),bookingController.getTutorBookings);
+router.patch("/:id/status", authmiddleware(UserRoles.TUTOR),bookingController.updateBookingStatus);
 router.get("/:id", authmiddleware(UserRoles.STUDENT,UserRoles.TUTOR),bookingController.getBookingById);
 
 router.delete(
