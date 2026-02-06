@@ -7,9 +7,9 @@ interface CreateTutorPayload {
   experience?: number;
   education?: string;
   subjects: string[];
-  name: string;  // user name
-  email: string; // user email
-  image?: string; // user image
+  name: string;  
+  email: string; 
+  image?: string; 
 }
 
 const createTutor = async (
@@ -95,26 +95,61 @@ const updateAvailability = async (
   };
 };
 
+// const getAllTutors = async () => {
+//   const tutors = await prisma.tutorProfile.findMany({
+//     include: {
+//       availability: {
+//         select: {
+//           id: true,
+//           dayOfWeek: true,
+//           startTime: true,
+//           endTime: true,
+//           isBooked: true,
+//         },
+//       },
+//       reviews:{
+//         select: {
+//           id: true,
+//           rating: true,
+//           comment: true,
+//           createdAt: true,
+//           studentId: true,
+//         },
+//       }
+//     },
+//     orderBy: {
+//       createdAt: "desc",
+//     },
+//   });
+
+//   return tutors;
+// };
+
 const getAllTutors = async () => {
   const tutors = await prisma.tutorProfile.findMany({
     include: {
-      availability: {
+      availability: true,
+      _count: {
+        select: { reviews: true },
+      },
+      reviews: {
         select: {
-          id: true,
-          dayOfWeek: true,
-          startTime: true,
-          endTime: true,
-          isBooked: true,
+          rating: true,
         },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
   });
 
-  return tutors;
+  return tutors.map((tutor) => ({
+    ...tutor,
+    averageRating:
+      tutor.reviews.length === 0
+        ? 0
+        : tutor.reviews.reduce((a, b) => a + b.rating, 0) /
+          tutor.reviews.length,
+  }));
 };
+
 
 const getTutorProfileById = async (tutorProfileId: string) => {
   const tutor = await prisma.tutorProfile.findUnique({
@@ -134,6 +169,18 @@ const getTutorProfileById = async (tutorProfileId: string) => {
           dayOfWeek: "asc",
         },
       },
+      reviews:{
+         select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          studentId: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }
     },
   });
 
