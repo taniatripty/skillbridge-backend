@@ -72,7 +72,11 @@ const updateAvailability = async (
 
   // 🧹 Remove old slots
   await prisma.availabilitySlot.deleteMany({
-    where: { tutorProfileId: tutor.id },
+    where: { 
+      tutorProfileId: tutor.id,
+        isBooked: false,
+
+     },
   });
 
   // ✅ Create new slots

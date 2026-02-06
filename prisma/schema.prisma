@@ -96,7 +96,7 @@ model Review {
   id String @id @default(uuid())
 
   bookingId      String @unique
-  studentId      String // references User.id
+  studentId      String 
   tutorProfileId String
 
   rating  Int
