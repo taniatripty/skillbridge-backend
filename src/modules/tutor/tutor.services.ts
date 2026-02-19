@@ -3,7 +3,7 @@ import { AvailabilitySlotCreateManyInput } from "../../../generated/prisma/model
 import { prisma } from "../../lib/prisma";
 
 interface CreateTutorPayload {
-  hourlyRate: number;
+  hourlyRate: number 
   experience?: number;
   education?: string;
   subjects: string[];
@@ -12,6 +12,11 @@ interface CreateTutorPayload {
   image?: string; 
 }
 
+interface TutorFilter {
+  minRating?: number | undefined;
+  minPrice?: number | undefined;
+  maxPrice?: number | undefined;
+}
 const createTutor = async (
   userId: string,
   payload: CreateTutorPayload
@@ -95,47 +100,82 @@ const updateAvailability = async (
   };
 };
 
-// const getAllTutors = async () => {
-//   const tutors = await prisma.tutorProfile.findMany({
-//     include: {
-//       availability: {
-//         select: {
-//           id: true,
-//           dayOfWeek: true,
-//           startTime: true,
-//           endTime: true,
-//           isBooked: true,
-//         },
-//       },
-//       reviews:{
-//         select: {
-//           id: true,
-//           rating: true,
-//           comment: true,
-//           createdAt: true,
-//           studentId: true,
-//         },
-//       }
-//     },
-//     orderBy: {
-//       createdAt: "desc",
-//     },
-//   });
 
-//   return tutors;
-// };
 
-const getAllTutors = async () => {
+
+
+
+
+const getAllTutors = async ({
+  rating,
+  hourlyRate,
+  languages,
+}: {
+  rating?: number | undefined;
+  hourlyRate?: number | undefined;
+  languages: string[] | [];
+}) => {
+  const andConditions: any[] = [];
+
+  // 💰 Hourly rate
+  if (hourlyRate !== undefined) {
+    andConditions.push({ hourlyRate });
+  }
+
+  // 🧠 Case-insensitive language filter
+  // if (languages.length > 0) {
+  //   const normalizedLanguages = languages.map((l) =>
+  //     l.trim().toLowerCase()
+  //   );
+
+  //   andConditions.push({
+  //     languages: {
+  //       hasSome: normalizedLanguages,
+  //     },
+  //   });
+  // }
+  if (languages.length > 0) {
+  andConditions.push({
+    languages: {
+      hasSome: languages,
+    },
+  });
+}
+
+
+  // ⭐ Average rating filter
+  if (rating !== undefined) {
+    const grouped = await prisma.review.groupBy({
+      by: ["tutorProfileId"],
+      _avg: { rating: true },
+      having: {
+        rating: {
+          _avg: {
+            gte: rating,
+          },
+        },
+      },
+    });
+
+    const tutorIds = grouped.map((g) => g.tutorProfileId);
+
+    if (tutorIds.length === 0) {
+      return [];
+    }
+
+    andConditions.push({
+      id: { in: tutorIds },
+    });
+  }
+
   const tutors = await prisma.tutorProfile.findMany({
+    where: {
+      AND: andConditions,
+    },
     include: {
       availability: true,
-      _count: {
-        select: { reviews: true },
-      },
       reviews: {
-        select: {
-          rating: true,
-        },
+        select: { rating: true },
       },
     },
   });
@@ -149,6 +189,34 @@ const getAllTutors = async () => {
           tutor.reviews.length,
   }));
 };
+
+
+const getPopularTutors = async () => {
+  const tutors = await prisma.tutorProfile.findMany({
+    include: {
+      reviews: {
+        select: { rating: true },
+      },
+      availability: true,
+    },
+  });
+
+  // Compute average rating
+  const popularTutors = tutors
+    .map((tutor) => ({
+      ...tutor,
+      averageRating:
+        tutor.reviews.length === 0
+          ? 0
+          : tutor.reviews.reduce((sum, r) => sum + r.rating, 0) /
+            tutor.reviews.length,
+    }))
+    .filter((tutor) => tutor.averageRating >= 4) // filter popular tutors
+    .sort((a, b) => b.averageRating - a.averageRating); // sort descending
+
+  return popularTutors;
+};
+
 
 
 const getTutorProfileById = async (tutorProfileId: string) => {
@@ -190,9 +258,13 @@ const getTutorProfileById = async (tutorProfileId: string) => {
 
   return tutor;
 };
+
+
+
 export const tutorServices = {
   createTutor,
   updateAvailability,
   getAllTutors,
-  getTutorProfileById
+  getTutorProfileById,
+  getPopularTutors
 };

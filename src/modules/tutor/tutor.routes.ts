@@ -15,7 +15,7 @@ router.put(
  authMiddleware(UserRoles.TUTOR),
 tutorController.updateAvailability
 );
-
+router.get("/popular", tutorController.getPopularTutors);
 router.get("/:tutorId", tutorController.getTutorById);
 router.get("/", tutorController.getAllTutors);
 

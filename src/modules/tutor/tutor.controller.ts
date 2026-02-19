@@ -57,9 +57,99 @@ const updateAvailability = async (req: Request, res: Response) => {
 };
 
 
+
+
+// const getAllTutors = async (req: Request, res: Response) => {
+//   try {
+//     const minPrice = req.query.minPrice
+//       ? Number(req.query.minPrice)
+//       : undefined;
+
+//     const maxPrice = req.query.maxPrice
+//       ? Number(req.query.maxPrice)
+//       : undefined;
+
+//     const minRating = req.query.minRating
+//       ? Number(req.query.minRating)
+//       : undefined;
+
+//     const tutors = await tutorServices.getAllTutors({
+//       minPrice,
+//       maxPrice,
+//       minRating,
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       data: tutors,
+//     });
+//   } catch (error: any) {
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
+
 const getAllTutors = async (req: Request, res: Response) => {
   try {
-    const tutors = await tutorServices.getAllTutors();
+    const rating =
+      typeof req.query.rating === "string"
+        ? Number(req.query.rating)
+        : undefined;
+
+    const hourlyRate =
+      typeof req.query.hourlyRate === "string"
+        ? Number(req.query.hourlyRate)
+        : undefined;
+
+    // const languages =
+    //   typeof req.query.languages === "string"
+    //     ? req.query.languages
+    //         .split(",")
+    //         .map((l) => l.trim().toLowerCase())
+    //     : [];
+
+    const toTitleCase = (text: string) =>
+  text
+    .trim()
+    .toLowerCase()
+    .split(" ")
+    .map(
+      (word) => word.charAt(0).toUpperCase() + word.slice(1)
+    )
+    .join(" ");
+
+const languages =
+  typeof req.query.languages === "string"
+    ? req.query.languages
+        .split(",")
+        .map((l) => toTitleCase(l))
+    : [];
+
+
+    const tutors = await tutorServices.getAllTutors({
+      rating,
+      hourlyRate,
+      languages,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: tutors,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const getPopularTutors = async (req: Request, res: Response) => {
+  try {
+    const tutors = await tutorServices.getPopularTutors();
 
     res.status(200).json({
       success: true,
@@ -94,5 +184,6 @@ export const tutorController = {
   createTutorProfile,
   updateAvailability,
   getAllTutors,
-  getTutorById
+  getTutorById,
+  getPopularTutors
 };

@@ -18,4 +18,8 @@ router.get(
   reviewController.getLoggedTutorReviews
 );
 
+router.get(
+  "/all", reviewController.getAllTutorReviews
+);
+
 export const reviewRoutes=router;

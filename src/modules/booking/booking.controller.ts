@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import { bookingServices } from "./booking.services";
+import { prisma } from "../../lib/prisma";
 
 const createBooking = async (req: Request, res: Response) => {
   try {
-    // user injected by auth middleware
+    
     const studentId = req?.user?.id;
 
     const { tutorProfileId, availabilitySlotId, price } = req.body;
@@ -51,6 +52,78 @@ const getMyBookings = async (req: Request, res: Response) => {
   }
 };
 
+const getBookings = async (req: Request, res: Response) => {
+  try {
+   ;// from auth middleware
+
+    const bookings = await bookingServices.getBooking()
+
+    res.status(200).json({
+      success: true,
+      data: bookings,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+//  const getMyBookingStats = async (req: Request, res: Response) => {
+//   try {
+//     const studentId = req.user?.id;
+
+//     const stats = await bookingServices.getStudentBookingStats(
+//       studentId as string
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       data: stats,
+//     });
+//   } catch (error: any) {
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
+ const getMyBookingStats = async (req: Request, res: Response) => {
+  try {
+    const studentId = req.user?.id;
+    if (!studentId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized. User not found.",
+      });
+    }
+
+    const stats = await bookingServices.getStudentBookingStats(studentId);
+
+    // If the user is banned, respond immediately
+    if (stats.banned) {
+      return res.status(403).json({
+        success: false,
+        message: stats.banReason || "Your account has been suspended.",
+      });
+    }
+
+    // User is active, return booking stats
+    res.status(200).json({
+      success: true,
+      data: stats.data,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 const getTutorBookings = async (req: Request, res: Response) => {
   try {
     const tutorProfileId = req.user?.tutorProfileId;
@@ -79,8 +152,124 @@ const getTutorBookings = async (req: Request, res: Response) => {
 };
 
 
-// src/modules/booking/booking.controller.ts
+// const getTutorBookingStats = async (req: Request, res: Response) => {
+//   try {
+//     // assuming auth middleware adds user info
+//     const tutorProfileId = req.user?.tutorProfileId;
 
+//     if (!tutorProfileId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Tutor profile not found",
+//       });
+//     }
+
+//     const stats = await bookingServices.getTutorBookingStatistics(
+//       tutorProfileId
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       data: stats,
+//     });
+//   } catch (error: any) {
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
+
+// const getTutorStatistics = async (req: Request, res: Response) => {
+//   try {
+//     const tutorProfileId = req.user?.tutorProfileId;
+
+//     if (!tutorProfileId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Tutor profile not found",
+//       });
+//     }
+
+//     const stats = await bookingServices.getTutorStatistics(
+//       tutorProfileId
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       data: stats,
+//     });
+//   } catch (error: any) {
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
+const getTutorStatistics = async (req: Request, res: Response) => {
+  try {
+    const tutorProfileId = req.user?.tutorProfileId;
+    const userId = req.user?.id;
+
+    if (!tutorProfileId || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: "Tutor profile or user not found",
+      });
+    }
+
+    // -------------------------
+    // 1️⃣ Check if user is banned
+    // -------------------------
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { status: true, banReason: true, banExpiresAt: true },
+    });
+
+    if (!dbUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (dbUser.status === "BANNED") {
+      // Auto-unban if ban expired
+      if (dbUser.banExpiresAt && new Date() > dbUser.banExpiresAt) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { status: "ACTIVE", banReason: null, banExpiresAt: null },
+        });
+      } else {
+        return res.status(403).json({
+          success: false,
+          message:
+            dbUser.banReason || "Your account has been banned. Contact support.",
+        });
+      }
+    }
+
+    // -------------------------
+    // 2️⃣ Get tutor statistics
+    // -------------------------
+    const stats = await bookingServices.getTutorStatistics(
+      tutorProfileId,
+      userId
+    );
+
+    res.status(200).json({
+      success: true,
+      data: stats,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Something went wrong",
+    });
+  }
+};
 
 const getBookingById = async (req: Request, res: Response) => {
   try {
@@ -164,11 +353,17 @@ const cancelBooking = async (req: Request, res: Response) => {
   }
 };
 
+
+
 export const bookingController = {
   createBooking,
+  getBookings,
   getMyBookings,
+  getMyBookingStats,
   getBookingById,
   cancelBooking,
  getTutorBookings,
- updateBookingStatus
+ getTutorStatistics,
+ updateBookingStatus,
+
 };

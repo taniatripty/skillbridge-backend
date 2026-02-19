@@ -143,10 +143,22 @@ model User {
 
   role   String  @default("STUDENT")
   phone  String?
-  status String? @default("ACTIVE")
+  status UserStatus @default(ACTIVE)
+  banReason    String?
+  banExpiresAt DateTime?
+  banLogs      BanLog[]
 
   @@unique([email])
   @@map("user")
+}
+
+model BanLog {
+  id        String   @id @default(uuid())
+  reason    String
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -195,4 +207,10 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+
+enum UserStatus {
+  ACTIVE
+  BANNED
 }

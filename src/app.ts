@@ -7,6 +7,7 @@ import { categoryRoutes } from './modules/categories/categories.routes';
 import { tutotRoutes } from './modules/tutor/tutor.routes';
 import { bookingRoutes } from './modules/booking/booking.routes';
 import { reviewRoutes } from './modules/review/review.routes';
+import { userRoutes } from './modules/user/user.routes';
 const app=express()
 app.use(cors({
     origin:process.env.APP_URL,
@@ -20,6 +21,7 @@ app.use("/api/categories", categoryRoutes);
 app.use('/api/tutor',tutotRoutes)
 app.use('/api/bookings',bookingRoutes)
 app.use('/api/reviews',reviewRoutes)
+app.use('/api/users',userRoutes)
 app.get('/',(req,res)=>{
 res.send('SkillBridge Backend')
 })
