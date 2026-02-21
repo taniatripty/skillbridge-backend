@@ -8,6 +8,7 @@ import { tutotRoutes } from './modules/tutor/tutor.routes';
 import { bookingRoutes } from './modules/booking/booking.routes';
 import { reviewRoutes } from './modules/review/review.routes';
 import { userRoutes } from './modules/user/user.routes';
+
 const app=express()
 app.use(cors({
     origin:process.env.APP_URL,
@@ -15,6 +16,9 @@ app.use(cors({
     
 }))
 app.use(express.json())
+app.get('/',(req,res)=>{
+res.send('SkillBridge Backend')
+})
 app.all("/api/auth/*splat", toNodeHandler(auth));
 
 app.use("/api/categories", categoryRoutes);
@@ -22,7 +26,7 @@ app.use('/api/tutor',tutotRoutes)
 app.use('/api/bookings',bookingRoutes)
 app.use('/api/reviews',reviewRoutes)
 app.use('/api/users',userRoutes)
-app.get('/',(req,res)=>{
-res.send('SkillBridge Backend')
-})
+
+
+
 export default app;
