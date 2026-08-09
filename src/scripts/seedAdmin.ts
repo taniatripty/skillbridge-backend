@@ -23,7 +23,7 @@ async function seedAdmin() {
     }
 
     const signUpAdmin = await fetch(
-      " http://localhost:5000/api/auth/sign-up/email",
+      " http://localhost:8080/api/auth/sign-up/email",
       {
         method: "POST",
         headers: {

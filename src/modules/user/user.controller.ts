@@ -76,7 +76,7 @@ const unbanUserController = async (
    const user=req?.user
     const userId = user?.id as string; 
 
-    const { name, email, phone, image } = req.body;
+    const { name, email, phone, image,role } = req.body;
 
     const updatedUser = await userService.updateProfile({
       userId,

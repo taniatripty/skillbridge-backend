@@ -6,6 +6,7 @@ interface UpdateProfilePayload {
   userId: string;
   name?: string;
   email?: string;
+  role?:string;
   status?:string;
   phone?: string | null;
   image?: string | null;
@@ -160,6 +161,7 @@ interface UpdateProfilePayload {
 const updateProfile = async ({
   userId,
   name,
+  role,
   email,
   phone,
   image,
@@ -169,7 +171,7 @@ const updateProfile = async ({
   if (name?.trim()) data.name = name;
   if (phone?.trim()) data.phone = phone;
   if (image?.trim()) data.image = image;
-
+ if (role?.trim()) data.role= role;
   if (email?.trim()) {
     const exists = await prisma.user.findUnique({
       where: { email },

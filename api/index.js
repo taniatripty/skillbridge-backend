@@ -86,7 +86,7 @@ var auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   trustedOrigins: [
     "http://localhost:3000",
-    "http://localhost:8080"
+    "http://localhost:3000"
   ],
   user: {
     additionalFields: {
@@ -1672,15 +1672,6 @@ router5.patch(
 router5.patch("/profile", authmiddleware_default("STUDENT" /* STUDENT */, "TUTOR" /* TUTOR */, "ADMIN" /* ADMIN */), userController.updateProfile);
 var userRoutes = router5;
 
-// src/middleware/notFound.ts
-function notFound(req, res) {
-  res.status(404).json({
-    message: "Route not found!",
-    path: req.originalUrl,
-    date: Date()
-  });
-}
-
 // src/app.ts
 var app = express3();
 app.use(cors({
@@ -1688,16 +1679,15 @@ app.use(cors({
   credentials: true
 }));
 app.use(express3.json());
+app.get("/", (req, res) => {
+  res.send("SkillBridge Backend");
+});
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use("/api/categories", categoryRoutes);
 app.use("/api/tutor", tutotRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/users", userRoutes);
-app.use(notFound);
-app.get("/", (req, res) => {
-  res.send("SkillBridge Backend");
-});
 var app_default = app;
 
 // src/index.ts
