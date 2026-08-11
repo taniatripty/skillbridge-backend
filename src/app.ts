@@ -4,6 +4,7 @@ import express from "express";
 import { auth } from "./lib/auth";
 import { categoryRoutes } from "./modules/categories/categories.routes";
 
+import cookieParser from "cookie-parser";
 import { notFound } from "./middleware/notFound";
 import { bookingRoutes } from "./modules/booking/booking.routes";
 import { reviewRoutes } from "./modules/review/review.routes";
@@ -16,6 +17,8 @@ app.use(cors({
     credentials:true
 
 }))
+
+app.use(cookieParser());
 
 //Allowed origins
 
@@ -53,9 +56,7 @@ app.use(cors({
 //   }),
 // );
 
-// ------------------------
-// 3️⃣ Handle preflight OPTIONS for all routes
-// ------------------------
+// // 3️⃣ Handle preflight OPTIONS for all route
 // app.options(
 //   /.*/,
 //   cors({
@@ -66,8 +67,9 @@ app.use(cors({
 //     exposedHeaders: ["Set-Cookie"],
 //   }),
 // );
-
+app.use(cookieParser());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
   res.send("SkillBridge Backend");
 });

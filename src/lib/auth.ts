@@ -1,9 +1,9 @@
-
 // lib/auth.ts
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import nodemailer from "nodemailer";
 import { prisma } from "./prisma";
+import { oAuthProxy } from "better-auth/plugins";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -18,8 +18,10 @@ const transporter = nodemailer.createTransport({
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
 
-  trustedOrigins: ["http://localhost:3000", "http://localhost:3000"],
+    baseURL: process.env.FRONTEND_URL,
+  trustedOrigins: [process.env.FRONTEND_URL!],
 
+  
   user: {
     additionalFields: {
       role: {
@@ -51,16 +53,18 @@ export const auth = betterAuth({
       maxAge: 5 * 60, // 5 minutes
     },
   },
+
   advanced: {
-    cookiePrefix: "better-auth",
-    useSecureCookies: true,
-    defaultCookieAttributes: {
-      sameSite: "none",
-      secure: true,
-      httpOnly: true,
-      path: "/",
-    },
+  cookiePrefix: "better-auth",
+  useSecureCookies: true,
+
+  defaultCookieAttributes: {
+    sameSite: "none",
+    secure: true,
+    httpOnly: true,
+    path: "/",
   },
+},
   // ------------------------
   // Email & Password Login
   // ------------------------
@@ -144,4 +148,7 @@ export const auth = betterAuth({
   // ------------------------
   // Social Login
   // ------------------------
+
+   plugins: [oAuthProxy()],
 });
+

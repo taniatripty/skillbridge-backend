@@ -71,25 +71,6 @@ const getBookings = async (req: Request, res: Response) => {
 };
 
 
-//  const getMyBookingStats = async (req: Request, res: Response) => {
-//   try {
-//     const studentId = req.user?.id;
-
-//     const stats = await bookingServices.getStudentBookingStats(
-//       studentId as string
-//     );
-
-//     res.status(200).json({
-//       success: true,
-//       data: stats,
-//     });
-//   } catch (error: any) {
-//     res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
 
  const getMyBookingStats = async (req: Request, res: Response) => {
   try {
@@ -152,61 +133,8 @@ const getTutorBookings = async (req: Request, res: Response) => {
 };
 
 
-// const getTutorBookingStats = async (req: Request, res: Response) => {
-//   try {
-//     // assuming auth middleware adds user info
-//     const tutorProfileId = req.user?.tutorProfileId;
-
-//     if (!tutorProfileId) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Tutor profile not found",
-//       });
-//     }
-
-//     const stats = await bookingServices.getTutorBookingStatistics(
-//       tutorProfileId
-//     );
-
-//     res.status(200).json({
-//       success: true,
-//       data: stats,
-//     });
-//   } catch (error: any) {
-//     res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
 
 
-// const getTutorStatistics = async (req: Request, res: Response) => {
-//   try {
-//     const tutorProfileId = req.user?.tutorProfileId;
-
-//     if (!tutorProfileId) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Tutor profile not found",
-//       });
-//     }
-
-//     const stats = await bookingServices.getTutorStatistics(
-//       tutorProfileId
-//     );
-
-//     res.status(200).json({
-//       success: true,
-//       data: stats,
-//     });
-//   } catch (error: any) {
-//     res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
 
 const getTutorStatistics = async (req: Request, res: Response) => {
   try {
