@@ -18,8 +18,10 @@ const transporter = nodemailer.createTransport({
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
 
-    baseURL: process.env.FRONTEND_URL,
-  trustedOrigins: [process.env.FRONTEND_URL!],
+    baseURL: process.env.BACKEND_URL,
+  trustedOrigins: [ 
+ "https://skillbridge-frontend-alpha.vercel.app",
+  "http://localhost:3000",],
 
   
   user: {

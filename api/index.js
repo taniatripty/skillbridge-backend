@@ -1,5 +1,6 @@
 // src/app.ts
 import { toNodeHandler } from "better-auth/node";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express3 from "express";
 
@@ -9,8 +10,8 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import nodemailer from "nodemailer";
 
 // src/lib/prisma.ts
-import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 // generated/prisma/client.ts
 import * as path from "path";
@@ -86,8 +87,11 @@ var transporter = nodemailer.createTransport({
 });
 var auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
-  baseURL: process.env.FRONTEND_URL,
-  trustedOrigins: [process.env.FRONTEND_URL],
+  baseURL: process.env.BACKEND_URL,
+  trustedOrigins: [
+    "https://skillbridge-frontend-alpha.vercel.app",
+    "http://localhost:3000"
+  ],
   user: {
     additionalFields: {
       role: {
@@ -198,207 +202,6 @@ var auth = betterAuth({
   // ------------------------
   plugins: [oAuthProxy()]
 });
-
-// src/modules/categories/categories.routes.ts
-import { Router } from "express";
-
-// src/modules/categories/categories.services.ts
-var createCategory = async (name) => {
-  const normalizedName = name.trim().toLowerCase().split(" ").map(
-    (word) => word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(" ");
-  const exists = await prisma.category.findUnique({
-    where: { name: normalizedName }
-  });
-  if (exists) {
-    throw new Error("Category already exists");
-  }
-  return prisma.category.create({
-    data: {
-      name: normalizedName
-    }
-  });
-};
-var getAllCategories = async () => {
-  return prisma.category.findMany({
-    orderBy: { createdAt: "desc" }
-  });
-};
-var categoryservices = {
-  createCategory,
-  getAllCategories
-};
-
-// src/modules/categories/categories.controller.ts
-var createCategory2 = async (req, res) => {
-  try {
-    const { name } = req.body;
-    if (!name) {
-      return res.status(400).json({ message: "Category name is required" });
-    }
-    const category = await categoryservices.createCategory(name);
-    res.status(201).json({
-      success: true,
-      data: category
-    });
-  } catch (er) {
-    res.status(400).json({
-      success: false,
-      message: er.message
-    });
-  }
-};
-var getAllCategories2 = async (req, res) => {
-  try {
-    const categories = await categoryservices.getAllCategories();
-    res.status(200).json({
-      success: true,
-      data: categories
-    });
-  } catch {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch categories"
-    });
-  }
-};
-var categoryController = {
-  createCategory: createCategory2,
-  getAllCategories: getAllCategories2
-};
-
-// src/middleware/authmiddleware.ts
-async function checkUserBan(userId) {
-  const dbUser = await prisma.user.findUnique({
-    where: {
-      id: userId
-    },
-    select: {
-      status: true,
-      banReason: true,
-      banExpiresAt: true
-    }
-  });
-  if (!dbUser) {
-    return {
-      blocked: true,
-      reason: "User not found"
-    };
-  }
-  if (dbUser.status === "BANNED") {
-    if (dbUser.banExpiresAt && /* @__PURE__ */ new Date() > dbUser.banExpiresAt) {
-      await prisma.user.update({
-        where: {
-          id: userId
-        },
-        data: {
-          status: "ACTIVE",
-          banReason: null,
-          banExpiresAt: null
-        }
-      });
-      return {
-        blocked: false
-      };
-    }
-    return {
-      blocked: true,
-      reason: dbUser.banReason || "Your account has been suspended."
-    };
-  }
-  return {
-    blocked: false
-  };
-}
-var authmiddleware = (...roles) => {
-  return async (req, res, next) => {
-    try {
-      const cookieHeader = req.headers.cookie;
-      if (!cookieHeader) {
-        return res.status(401).json({
-          success: false,
-          message: "Unauthorized. Authentication cookie not received."
-        });
-      }
-      const headers = new Headers();
-      headers.set("cookie", cookieHeader);
-      const session = await auth.api.getSession({
-        headers
-      });
-      if (!session) {
-        return res.status(401).json({
-          success: false,
-          message: "Unauthorized. Invalid or expired session."
-        });
-      }
-      if (!session.user.emailVerified) {
-        return res.status(403).json({
-          success: false,
-          message: "Email not verified."
-        });
-      }
-      const banCheck = await checkUserBan(
-        session.user.id
-      );
-      if (banCheck.blocked) {
-        return res.status(403).json({
-          success: false,
-          message: banCheck.reason || "Your account has been suspended."
-        });
-      }
-      const role = session.user.role;
-      let tutorProfileId = null;
-      if (role === "TUTOR" /* TUTOR */) {
-        const tutorProfile = await prisma.tutorProfile.findUnique({
-          where: {
-            userId: session.user.id
-          },
-          select: {
-            id: true
-          }
-        });
-        if (!tutorProfile) {
-          return res.status(403).json({
-            success: false,
-            message: "Tutor profile not found."
-          });
-        }
-        tutorProfileId = tutorProfile.id;
-      }
-      req.user = {
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
-        role,
-        emailVerified: session.user.emailVerified,
-        tutorProfileId
-      };
-      if (roles.length > 0 && !roles.includes(role)) {
-        return res.status(403).json({
-          success: false,
-          message: "Forbidden. Access denied."
-        });
-      }
-      next();
-    } catch (error) {
-      console.error(
-        "Auth Middleware Error:",
-        error
-      );
-      return res.status(500).json({
-        success: false,
-        message: "Authentication failed."
-      });
-    }
-  };
-};
-var authmiddleware_default = authmiddleware;
-
-// src/modules/categories/categories.routes.ts
-var router = Router();
-router.get("/", categoryController.getAllCategories);
-router.post("/", authmiddleware_default("ADMIN" /* ADMIN */), categoryController.createCategory);
-var categoryRoutes = router;
 
 // src/middleware/notFound.ts
 function notFound(req, res) {
@@ -931,42 +734,239 @@ var bookingController = {
   updateBookingStatus: updateBookingStatus2
 };
 
+// src/middleware/authmiddleware.ts
+var authmiddleware = (...roles) => {
+  return async (req, res, next) => {
+    try {
+      console.log("Request Cookie Header:", req.headers.cookie);
+      console.log("Parsed Cookies:", req.cookies);
+      const sessionToken = req.cookies["__Secure-better-auth.session_token"] || req.cookies["better-auth.session_token"] || req.cookies["__Secure-session_token"] || req.cookies["session_token"];
+      if (!sessionToken) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized. Please login."
+        });
+      }
+      console.log("Session Token Found");
+      const cookieHeader = req.headers.cookie;
+      if (!cookieHeader) {
+        return res.status(401).json({
+          success: false,
+          message: "No authentication cookie found."
+        });
+      }
+      const headers = new Headers();
+      headers.set("cookie", cookieHeader);
+      const session = await auth.api.getSession({
+        headers
+      });
+      if (!session) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid or expired session."
+        });
+      }
+      if (!session.user.emailVerified) {
+        return res.status(403).json({
+          success: false,
+          message: "Please verify your email first."
+        });
+      }
+      const dbUser = await prisma.user.findUnique({
+        where: {
+          id: session.user.id
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          emailVerified: true,
+          status: true,
+          banReason: true,
+          banExpiresAt: true
+        }
+      });
+      if (!dbUser) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found."
+        });
+      }
+      if (dbUser.status === "BANNED") {
+        if (dbUser.banExpiresAt && /* @__PURE__ */ new Date() > dbUser.banExpiresAt) {
+          await prisma.user.update({
+            where: {
+              id: dbUser.id
+            },
+            data: {
+              status: "ACTIVE",
+              banReason: null,
+              banExpiresAt: null
+            }
+          });
+        } else {
+          return res.status(403).json({
+            success: false,
+            banned: true,
+            message: dbUser.banReason || "Your account has been suspended."
+          });
+        }
+      }
+      let tutorProfileId = null;
+      if (dbUser.role === "TUTOR" /* TUTOR */) {
+        const tutorProfile = await prisma.tutorProfile.findUnique({
+          where: {
+            userId: dbUser.id
+          },
+          select: {
+            id: true
+          }
+        });
+        if (!tutorProfile) {
+          return res.status(403).json({
+            success: false,
+            message: "Tutor profile not found."
+          });
+        }
+        tutorProfileId = tutorProfile.id;
+      }
+      req.user = {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        role: dbUser.role,
+        emailVerified: dbUser.emailVerified,
+        tutorProfileId
+      };
+      if (roles.length > 0 && !roles.includes(req.user.role)) {
+        return res.status(403).json({
+          success: false,
+          message: "Forbidden. Access denied."
+        });
+      }
+      next();
+    } catch (error) {
+      console.error("Auth Middleware Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Authentication failed."
+      });
+    }
+  };
+};
+var authmiddleware_default = authmiddleware;
+
 // src/modules/booking/booking.routes.ts
-var router2 = express.Router();
-router2.post(
+var router = express.Router();
+router.post(
   "/",
   authmiddleware_default("STUDENT" /* STUDENT */),
   bookingController.createBooking
 );
-router2.get(
+router.get(
   "/",
   authmiddleware_default("STUDENT" /* STUDENT */),
   bookingController.getMyBookings
 );
-router2.get(
+router.get(
   "/all",
   authmiddleware_default("ADMIN" /* ADMIN */),
   bookingController.getBookings
 );
-router2.get(
+router.get(
   "/my/status",
   authmiddleware_default("STUDENT" /* STUDENT */),
   bookingController.getMyBookingStats
 );
-router2.get(
+router.get(
   "/tutor/statistics",
   authmiddleware_default("TUTOR" /* TUTOR */),
   bookingController.getTutorStatistics
 );
-router2.get("/tutorbooking", authmiddleware_default("TUTOR" /* TUTOR */), bookingController.getTutorBookings);
-router2.patch("/:id/status", authmiddleware_default("TUTOR" /* TUTOR */), bookingController.updateBookingStatus);
-router2.get("/:id", authmiddleware_default("STUDENT" /* STUDENT */, "TUTOR" /* TUTOR */), bookingController.getBookingById);
-router2.delete(
+router.get("/tutorbooking", authmiddleware_default("TUTOR" /* TUTOR */), bookingController.getTutorBookings);
+router.patch("/:id/status", authmiddleware_default("TUTOR" /* TUTOR */), bookingController.updateBookingStatus);
+router.get("/:id", authmiddleware_default("STUDENT" /* STUDENT */, "TUTOR" /* TUTOR */), bookingController.getBookingById);
+router.delete(
   "/:id",
   authmiddleware_default("STUDENT" /* STUDENT */, "ADMIN" /* ADMIN */),
   bookingController.cancelBooking
 );
-var bookingRoutes = router2;
+var bookingRoutes = router;
+
+// src/modules/categories/categories.routes.ts
+import { Router } from "express";
+
+// src/modules/categories/categories.services.ts
+var createCategory = async (name) => {
+  const normalizedName = name.trim().toLowerCase().split(" ").map(
+    (word) => word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(" ");
+  const exists = await prisma.category.findUnique({
+    where: { name: normalizedName }
+  });
+  if (exists) {
+    throw new Error("Category already exists");
+  }
+  return prisma.category.create({
+    data: {
+      name: normalizedName
+    }
+  });
+};
+var getAllCategories = async () => {
+  return prisma.category.findMany({
+    orderBy: { createdAt: "desc" }
+  });
+};
+var categoryservices = {
+  createCategory,
+  getAllCategories
+};
+
+// src/modules/categories/categories.controller.ts
+var createCategory2 = async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: "Category name is required" });
+    }
+    const category = await categoryservices.createCategory(name);
+    res.status(201).json({
+      success: true,
+      data: category
+    });
+  } catch (er) {
+    res.status(400).json({
+      success: false,
+      message: er.message
+    });
+  }
+};
+var getAllCategories2 = async (req, res) => {
+  try {
+    const categories = await categoryservices.getAllCategories();
+    res.status(200).json({
+      success: true,
+      data: categories
+    });
+  } catch {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch categories"
+    });
+  }
+};
+var categoryController = {
+  createCategory: createCategory2,
+  getAllCategories: getAllCategories2
+};
+
+// src/modules/categories/categories.routes.ts
+var router2 = Router();
+router2.get("/", categoryController.getAllCategories);
+router2.post("/", authmiddleware_default("ADMIN" /* ADMIN */), categoryController.createCategory);
+var categoryRoutes = router2;
 
 // src/modules/review/review.routes.ts
 import { Router as Router2 } from "express";
@@ -1748,49 +1748,58 @@ router5.patch("/profile", authmiddleware_default("STUDENT" /* STUDENT */, "TUTOR
 var userRoutes = router5;
 
 // src/app.ts
-import cookieParser from "cookie-parser";
 var app = express3();
-app.use(cookieParser());
 var allowedOrigins = [
   "http://localhost:3000",
-  "http://localhost:3000"
-];
+  "https://skillbridge-frontend-alpha.vercel.app",
+  process.env.FRONTEND_URL
+].filter((origin) => Boolean(origin));
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) {
         return callback(null, true);
       }
-      const isAllowed = allowedOrigins.includes(origin) || /^https:\/\/skillbridge-frontend-alpha.*\.vercel\.app$/.test(origin);
-      if (isAllowed) {
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      console.warn(`Blocked CORS request from: ${origin}`);
-      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+      if (/^https:\/\/skillbridge-frontend-alpha.*\.vercel\.app$/.test(
+        origin
+      )) {
+        return callback(null, true);
+      }
+      console.log("Blocked CORS origin:", origin);
+      return callback(
+        new Error(`Origin ${origin} not allowed by CORS`)
+      );
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-    exposedHeaders: ["Set-Cookie"]
-  })
-);
-app.options(
-  /.*/,
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-    exposedHeaders: ["Set-Cookie"]
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS"
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cookie"
+    ]
   })
 );
 app.use(cookieParser());
+app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express3.json());
-app.use(express3.urlencoded({ extended: true }));
-app.get("/", (req, res) => {
+app.use(
+  express3.urlencoded({
+    extended: true
+  })
+);
+app.get("/", (_req, res) => {
   res.send("SkillBridge Backend");
 });
-app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/tutor", tutotRoutes);
 app.use("/api/v1/bookings", bookingRoutes);
@@ -1802,6 +1811,5 @@ var app_default = app;
 // src/index.ts
 var index_default = app_default;
 export {
-    index_default as default
+  index_default as default
 };
-
