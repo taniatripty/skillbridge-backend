@@ -1,9 +1,9 @@
 // lib/auth.ts
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { oAuthProxy } from "better-auth/plugins";
 import nodemailer from "nodemailer";
 import { prisma } from "./prisma";
-import { oAuthProxy } from "better-auth/plugins";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -18,12 +18,9 @@ const transporter = nodemailer.createTransport({
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
 
-    baseURL: process.env.BACKEND_URL,
-  trustedOrigins: [ 
- "https://skillbridge-frontend-alpha.vercel.app",
-  "http://localhost:3000",],
+  baseURL: process.env.BACKEND_URL,
+  trustedOrigins: ["http://localhost:3000", "http://localhost:3000"],
 
-  
   user: {
     additionalFields: {
       role: {
@@ -57,16 +54,16 @@ export const auth = betterAuth({
   },
 
   advanced: {
-  cookiePrefix: "better-auth",
-  useSecureCookies: true,
+    cookiePrefix: "better-auth",
+    useSecureCookies: true,
 
-  defaultCookieAttributes: {
-    sameSite: "none",
-    secure: true,
-    httpOnly: true,
-    path: "/",
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+      httpOnly: true,
+      path: "/",
+    },
   },
-},
   // ------------------------
   // Email & Password Login
   // ------------------------
@@ -151,6 +148,5 @@ export const auth = betterAuth({
   // Social Login
   // ------------------------
 
-   plugins: [oAuthProxy()],
+  plugins: [oAuthProxy()],
 });
-

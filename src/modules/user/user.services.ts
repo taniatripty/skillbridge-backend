@@ -113,7 +113,7 @@ interface UpdateProfilePayload {
   }
 
   const getDashboardStats= async () => {
-    // 👤 User statistics
+    //  User statistics
     const [
       totalUsers,
       totalStudents,
@@ -158,6 +158,47 @@ interface UpdateProfilePayload {
 }
  
 
+// const updateProfile = async ({
+//   userId,
+//   name,
+//   role,
+//   email,
+//   phone,
+//   image,
+// }: UpdateProfilePayload) => {
+//   const data: Record<string, any> = {};
+
+//   if (name?.trim()) data.name = name;
+//   if (phone?.trim()) data.phone = phone;
+//   if (image?.trim()) data.image = image;
+//  if (role?.trim()) data.role= role;
+//   if (email?.trim()) {
+//     const exists = await prisma.user.findUnique({
+//       where: { email },
+//     });
+
+//     if (exists && exists.id !== userId) {
+//       throw new Error("Email already in use");
+//     }
+
+//     data.email = email;
+//   }
+
+//   return prisma.user.update({
+//     where: { id: userId },
+//     data,
+//     select: {
+//       id: true,
+//       name: true,
+//       email: true,
+//       role: true,
+//       phone: true,
+//       image: true,
+//       updatedAt: true,
+//     },
+//   });
+// };
+
 const updateProfile = async ({
   userId,
   name,
@@ -166,26 +207,42 @@ const updateProfile = async ({
   phone,
   image,
 }: UpdateProfilePayload) => {
-  const data: Record<string, any> = {};
+  const data: Record<string, unknown> = {};
 
-  if (name?.trim()) data.name = name;
-  if (phone?.trim()) data.phone = phone;
-  if (image?.trim()) data.image = image;
- if (role?.trim()) data.role= role;
-  if (email?.trim()) {
+  if (name !== undefined) {
+    data.name = name.trim();
+  }
+
+ if (image !== undefined && image !== null) {
+    data.image = image.trim();
+  }
+
+   if (phone !== undefined && phone !== null) {
+    data.phone = phone.trim();
+  }
+
+  if (role !== undefined) {
+    data.role = role;
+  }
+
+  if (email !== undefined) {
+    const normalizedEmail = email.trim().toLowerCase();
+
     const exists = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (exists && exists.id !== userId) {
       throw new Error("Email already in use");
     }
 
-    data.email = email;
+    data.email = normalizedEmail;
   }
 
   return prisma.user.update({
-    where: { id: userId },
+    where: {
+      id: userId,
+    },
     data,
     select: {
       id: true,
@@ -198,7 +255,6 @@ const updateProfile = async ({
     },
   });
 };
-
 
 export const userService = {
     getAllUsers,

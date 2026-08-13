@@ -22,7 +22,7 @@
 
 // //Allowed origins
 
-// const allowedOrigins = ["https://skillbridge-frontend-alpha.vercel.app", "https://skillbridge-frontend-alpha.vercel.app"];
+// const allowedOrigins = ["http://localhost:3000", "http://localhost:3000"];
 
 // app.use(
 //   cors({
@@ -100,56 +100,47 @@ import { userRoutes } from "./modules/user/user.routes";
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://skillbridge-frontend-alpha.vercel.app",
-  process.env.FRONTEND_URL,
-].filter((origin): origin is string => Boolean(origin));
+// const allowedOrigins = [
+//   "http://localhost:3000",
+//   "http://localhost:3000",
+//   process.env.FRONTEND_URL,
+// ].filter((origin): origin is string => Boolean(origin));
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        return callback(null, true);
-      }
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin) {
+//         return callback(null, true);
+//       }
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+//       if (allowedOrigins.includes(origin)) {
+//         return callback(null, true);
+//       }
 
-      if (
-        /^https:\/\/skillbridge-frontend-alpha.*\.vercel\.app$/.test(
-          origin,
-        )
-      ) {
-        return callback(null, true);
-      }
+//       if (
+//         /^https:\/\/skillbridge-frontend-alpha.*\.vercel\.app$/.test(origin)
+//       ) {
+//         return callback(null, true);
+//       }
 
-      console.log("Blocked CORS origin:", origin);
+//       console.log("Blocked CORS origin:", origin);
 
-      return callback(
-        new Error(`Origin ${origin} not allowed by CORS`),
-      );
-    },
+//       return callback(new Error(`Origin ${origin} not allowed by CORS`));
+//     },
 
-    credentials: true,
+//     credentials: true,
 
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS",
-    ],
+//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cookie",
-    ],
-  }),
-);
+//     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+//   }),
+// );
+
+app.use(cors({
+    origin:process.env.APP_URL,
+    credentials:true
+    
+}))
 
 app.use(cookieParser());
 

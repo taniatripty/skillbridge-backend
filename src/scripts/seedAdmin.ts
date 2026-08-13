@@ -23,12 +23,12 @@ async function seedAdmin() {
     }
 
     const signUpAdmin = await fetch(
-      " https://skillbridge-backend-nine.vercel.app/api/auth/sign-up/email",
+      " http://localhost:8080/api/auth/sign-up/email",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          origin: "https://skillbridge-frontend-alpha.vercel.app",
+          origin: "http://localhost:3000",
         },
 
         body: JSON.stringify(adminData),

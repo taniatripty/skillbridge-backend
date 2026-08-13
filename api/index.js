@@ -10,8 +10,8 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import nodemailer from "nodemailer";
 
 // src/lib/prisma.ts
-import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
+import "dotenv/config";
 
 // generated/prisma/client.ts
 import * as path from "path";
@@ -89,7 +89,7 @@ var auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   baseURL: process.env.BACKEND_URL,
   trustedOrigins: [
-    "https://skillbridge-frontend-alpha.vercel.app",
+    "http://localhost:3000",
     "http://localhost:3000"
   ],
   user: {
@@ -1751,7 +1751,7 @@ var userRoutes = router5;
 var app = express3();
 var allowedOrigins = [
   "http://localhost:3000",
-  "https://skillbridge-frontend-alpha.vercel.app",
+  "http://localhost:3000",
   process.env.FRONTEND_URL
 ].filter((origin) => Boolean(origin));
 app.use(
@@ -1811,5 +1811,6 @@ var app_default = app;
 // src/index.ts
 var index_default = app_default;
 export {
-  index_default as default
+    index_default as default
 };
+
