@@ -19,7 +19,10 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
 
   baseURL: process.env.BACKEND_URL,
-  trustedOrigins: ["http://localhost:3000", "http://localhost:3000"],
+  trustedOrigins: [
+    "https://skillbridge-frontend-alpha.vercel.app",
+    "https://skillbridge-frontend-alpha.vercel.app",
+  ],
 
   user: {
     additionalFields: {

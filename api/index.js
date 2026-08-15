@@ -7,11 +7,12 @@ import express3 from "express";
 // src/lib/auth.ts
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { oAuthProxy } from "better-auth/plugins";
 import nodemailer from "nodemailer";
 
 // src/lib/prisma.ts
-import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 // generated/prisma/client.ts
 import * as path from "path";
@@ -75,7 +76,6 @@ var adapter = new PrismaPg({ connectionString });
 var prisma = new PrismaClient({ adapter });
 
 // src/lib/auth.ts
-import { oAuthProxy } from "better-auth/plugins";
 var transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
@@ -89,8 +89,8 @@ var auth = betterAuth({
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   baseURL: process.env.BACKEND_URL,
   trustedOrigins: [
-    "http://localhost:3000",
-    "http://localhost:3000"
+    "https://skillbridge-frontend-alpha.vercel.app",
+    "https://skillbridge-frontend-alpha.vercel.app"
   ],
   user: {
     additionalFields: {
@@ -1588,21 +1588,32 @@ var updateProfile = async ({
   image
 }) => {
   const data = {};
-  if (name?.trim()) data.name = name;
-  if (phone?.trim()) data.phone = phone;
-  if (image?.trim()) data.image = image;
-  if (role?.trim()) data.role = role;
-  if (email?.trim()) {
+  if (name !== void 0) {
+    data.name = name.trim();
+  }
+  if (image !== void 0 && image !== null) {
+    data.image = image.trim();
+  }
+  if (phone !== void 0 && phone !== null) {
+    data.phone = phone.trim();
+  }
+  if (role !== void 0) {
+    data.role = role;
+  }
+  if (email !== void 0) {
+    const normalizedEmail = email.trim().toLowerCase();
     const exists = await prisma.user.findUnique({
-      where: { email }
+      where: { email: normalizedEmail }
     });
     if (exists && exists.id !== userId) {
       throw new Error("Email already in use");
     }
-    data.email = email;
+    data.email = normalizedEmail;
   }
   return prisma.user.update({
-    where: { id: userId },
+    where: {
+      id: userId
+    },
     data,
     select: {
       id: true,
@@ -1750,8 +1761,8 @@ var userRoutes = router5;
 // src/app.ts
 var app = express3();
 var allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3000",
+  "https://skillbridge-frontend-alpha.vercel.app",
+  "https://skillbridge-frontend-alpha.vercel.app",
   process.env.FRONTEND_URL
 ].filter((origin) => Boolean(origin));
 app.use(
@@ -1763,30 +1774,15 @@ app.use(
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      if (/^https:\/\/skillbridge-frontend-alpha.*\.vercel\.app$/.test(
-        origin
-      )) {
+      if (/^https:\/\/skillbridge-frontend-alpha.*\.vercel\.app$/.test(origin)) {
         return callback(null, true);
       }
       console.log("Blocked CORS origin:", origin);
-      return callback(
-        new Error(`Origin ${origin} not allowed by CORS`)
-      );
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
     credentials: true,
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS"
-    ],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cookie"
-    ]
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"]
   })
 );
 app.use(cookieParser());
@@ -1811,6 +1807,5 @@ var app_default = app;
 // src/index.ts
 var index_default = app_default;
 export {
-    index_default as default
+  index_default as default
 };
-

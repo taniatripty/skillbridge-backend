@@ -116,22 +116,6 @@ const getBooking = async () => {
 };
 
 
-// const getStudentBookingStats = async (studentId: string) => {
-//   const [total, confirmed, completed, cancelled] = await Promise.all([
-//     prisma.booking.count({ where: { studentId } }),
-//     prisma.booking.count({ where: { studentId, status: "CONFIRMED" } }),
-//     prisma.booking.count({ where: { studentId, status: "COMPLETED" } }),
-//     prisma.booking.count({ where: { studentId, status: "CANCELLED" } }),
-//   ]);
-
-//   return {
-//     total,
-//     confirmed,
-//     completed,
-//     cancelled,
-//   };
-// };
-
  const getStudentBookingStats = async (studentId: string) => {
   // First, check if the user is banned
   const user = await prisma.user.findUnique({
@@ -205,9 +189,6 @@ const getBooking = async () => {
   return booking;
 };
 
-
-
-
 const getBookingsByTutor = async (tutorProfileId: string) => {
   return await prisma.booking.findMany({
     where: {
@@ -236,12 +217,9 @@ const getBookingsByTutor = async (tutorProfileId: string) => {
 
 
 
-
-
-
  const getTutorStatistics = async (tutorProfileId: string, userId: string) => {
   // -------------------------
-  // 1️⃣ Check if user is banned
+  //  Check if user is banned
   // -------------------------
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },
@@ -267,7 +245,7 @@ const getBookingsByTutor = async (tutorProfileId: string) => {
   }
 
   // -------------------------
-  // 2️⃣ Booking statistics
+  //  Booking statistics
   // -------------------------
   const bookingGrouped = await prisma.booking.groupBy({
     by: ["status"],
@@ -348,7 +326,7 @@ const getBookingsByTutor = async (tutorProfileId: string) => {
   }
 
 const cancelBooking = async (bookingId: string, studentId: string) => {
-  // 1️⃣ Find booking
+  //  Find booking
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
   });
@@ -357,43 +335,24 @@ const cancelBooking = async (bookingId: string, studentId: string) => {
     throw new Error("Booking not found");
   }
 
-  // 2️⃣ Ownership check
+  //  Ownership check
   if (booking.studentId !== studentId) {
     throw new Error("You are not allowed to cancel this booking");
   }
 
-  // 3️⃣ Free availability slot
+  //  Free availability slot
   await prisma.availabilitySlot.update({
     where: { id: booking.availabilitySlotId },
     data: { isBooked: false },
   });
 
-  // 4️⃣ Delete booking
+  //  Delete booking
   await prisma.booking.delete({
     where: { id: bookingId },
   });
 
   return { id: bookingId };
 };
-
-// const getStudentBookingStats = async (studentId: string) => {
-//   const [total, confirmed, completed, cancelled] = await Promise.all([
-//     prisma.booking.count({ where: { studentId } }),
-//     prisma.booking.count({ where: { studentId, status: "CONFIRMED" } }),
-//     prisma.booking.count({ where: { studentId, status: "COMPLETED" } }),
-//     prisma.booking.count({ where: { studentId, status: "CANCELLED" } }),
-//   ]);
-
-//   return {
-//     total,
-//     confirmed,
-//     completed,
-//     cancelled,
-//   };
-// };
-
-
-
 export const bookingServices = {
   createBooking,
   getBooking,
